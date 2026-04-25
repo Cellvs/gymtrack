@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f0f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>GymTrack Pro</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0f0f1a;--surf:#1a1a2e;--surf2:#16213e;--surf3:#0d1b2a;
+  --acc:#e94560;--blue:#4361ee;--green:#2ecc71;--purple:#9b59b6;
+  --txt:#eaeaea;--txt2:#9a9ab0;--brd:#252545;
+  --r:14px;--r2:10px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+input,textarea{font-family:inherit;outline:none;border:none;background:none;color:var(--txt)}
+input::placeholder,textarea::placeholder{color:var(--txt2)}
+
+#app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+#view{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#view::-webkit-scrollbar{display:none}
+
+/* Bottom nav */
+#nav{display:flex;background:var(--surf);border-top:1px solid var(--brd);padding-bottom:env(safe-area-inset-bottom)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;font-size:11px;color:var(--txt2);background:none;transition:color .2s}
+.nav-btn.active{color:var(--acc)}
+.nav-btn.nav-plus{color:#fff}
+.nav-btn.nav-plus .nav-plus-inner{width:44px;height:44px;border-radius:50%;background:var(--acc);display:flex;align-items:center;justify-content:center;margin-bottom:2px;margin-top:-20px;box-shadow:0 4px 16px rgba(233,69,96,.5)}
+.nav-btn svg{width:22px;height:22px}
+.nav-btn span{font-weight:500}
+
+/* Page */
+.page{min-height:100%;padding:0 0 20px}
+.page-header{padding:20px 16px 12px;position:sticky;top:0;z-index:10;background:var(--bg)}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.3px}
+.page-subtitle{font-size:13px;color:var(--txt2);margin-top:2px}
+
+/* Cards */
+.card{background:var(--surf);border-radius:var(--r);padding:16px;margin:0 16px 12px;border:1px solid var(--brd)}
+
+/* Buttons */
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:var(--r2);font-weight:600;font-size:15px;padding:13px 20px;transition:opacity .15s,transform .1s}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-primary{background:var(--acc);color:#fff}
+.btn-secondary{background:var(--surf2);color:var(--txt);border:1px solid var(--brd)}
+.btn-danger{background:#3a1a1a;color:#ff6b6b;border:1px solid #5a2a2a}
+.btn-green{background:#1a3a2a;color:var(--green);border:1px solid #2a5a3a}
+.btn-purple{background:#2a1a3a;color:#c39bd3;border:1px solid #4a2a6a}
+.btn-full{width:100%}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+
+/* Chips */
+.chips{display:flex;gap:8px;overflow-x:auto;padding:0 16px 12px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:13px;font-weight:500;background:var(--surf);border:1px solid var(--brd);color:var(--txt2);cursor:pointer;transition:all .2s}
+.chip.active{background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* Forms */
+.input-wrap{background:var(--surf);border:1px solid var(--brd);border-radius:var(--r2);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.input-wrap input{flex:1;font-size:15px}
+.input-wrap:focus-within{border-color:var(--acc)}
+.field-label{font-size:12px;color:var(--txt2);margin-bottom:6px;font-weight:500}
+
+/* Exercise item */
+.ex-item{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--brd);gap:12px;cursor:pointer}
+.ex-item:active{background:var(--surf2)}
+.ex-item:last-child{border-bottom:none}
+.ex-name{font-size:14px;font-weight:500;flex:1}
+.ex-group{font-size:11px;color:var(--txt2);margin-top:2px}
+
+/* Active exercise card */
+.sess-ex{background:var(--surf);border-radius:var(--r);margin:0 16px 10px;border:1px solid var(--brd);overflow:hidden}
+.sess-ex-header{display:flex;align-items:center;padding:13px 14px;gap:10px;cursor:pointer}
+.sess-ex-header:active{background:var(--surf2)}
+.sess-ex-name{flex:1;font-size:14px;font-weight:600}
+.sess-ex-meta{font-size:12px;color:var(--txt2)}
+.sess-ex-body{padding:0 14px 14px;display:none}
+.sess-ex-body.open{display:block}
+.sets-table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.sets-table th{font-size:11px;color:var(--txt2);font-weight:500;text-align:left;padding:4px 0 8px}
+.sets-table td{padding:5px 4px}
+.set-num{font-size:13px;color:var(--txt2);font-weight:600;width:28px}
+.set-input{background:var(--surf3);border:1px solid var(--brd);border-radius:7px;padding:7px 8px;font-size:14px;font-weight:600;color:var(--txt);text-align:center;width:60px}
+.set-input:focus{border-color:var(--acc)}
+.set-done{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surf3);border:1px solid var(--brd);cursor:pointer;font-size:16px;transition:all .2s}
+.set-done.checked{background:#1a3a2a;border-color:var(--green);color:var(--green)}
+.set-del{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:none;color:var(--txt2);font-size:16px;cursor:pointer}
+
+/* Modal / Bottom sheet */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:flex-end}
+.overlay.show{display:flex;animation:fadeIn .2s}
+.sheet{background:var(--surf);border-radius:20px 20px 0 0;width:100%;max-height:92dvh;display:flex;flex-direction:column;animation:slideUp .25s ease-out;padding-bottom:env(safe-area-inset-bottom)}
+.sheet-handle{width:36px;height:4px;background:var(--brd);border-radius:2px;margin:10px auto 0}
+.sheet-header{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between}
+.sheet-title{font-size:17px;font-weight:700}
+.sheet-close{width:32px;height:32px;border-radius:50%;background:var(--surf2);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--txt2);font-size:18px}
+.sheet-body{overflow-y:auto;flex:1;padding-bottom:8px}
+.sheet-body::-webkit-scrollbar{display:none}
+.sheet-footer{padding:12px 16px;border-top:1px solid var(--brd)}
+
+/* Stats */
+.stats-bar{display:flex;gap:10px;padding:0 16px 16px}
+.stat-box{flex:1;background:var(--surf);border-radius:var(--r2);padding:12px;border:1px solid var(--brd);text-align:center}
+.stat-val{font-size:22px;font-weight:700;color:var(--acc)}
+.stat-lbl{font-size:11px;color:var(--txt2);margin-top:2px}
+
+/* History card */
+.hist-card{background:var(--surf);border-radius:var(--r);margin:0 16px 12px;border:1px solid var(--brd);overflow:hidden}
+.hist-header{padding:14px 16px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.hist-header:active{background:var(--surf2)}
+.hist-date{font-size:11px;color:var(--txt2);font-weight:500}
+.hist-name{font-size:15px;font-weight:600;margin-top:2px}
+.hist-meta{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.hist-tag{font-size:11px;color:var(--txt2);display:flex;align-items:center;gap:3px}
+.hist-body{display:none;padding:0 16px 14px;border-top:1px solid var(--brd)}
+.hist-body.open{display:block}
+.hist-ex-row{padding:8px 0;border-bottom:1px solid var(--brd);font-size:13px}
+.hist-ex-row:last-child{border-bottom:none}
+.hist-ex-name{font-weight:600;margin-bottom:3px}
+.hist-sets{color:var(--txt2);font-size:12px}
+
+/* Ficha card */
+.ficha-card{background:var(--surf);border-radius:var(--r);margin:0 16px 12px;border:1px solid var(--brd);overflow:hidden}
+.ficha-header{padding:14px 16px;display:flex;align-items:center;gap:12px}
+.ficha-name{font-size:15px;font-weight:700;flex:1}
+.ficha-meta{font-size:12px;color:var(--txt2);margin-top:3px}
+.ficha-ex-list{padding:0 16px 12px;border-top:1px solid var(--brd)}
+.ficha-ex-tag{display:inline-flex;align-items:center;gap:5px;background:var(--surf2);border-radius:6px;padding:4px 8px;font-size:12px;margin:4px 4px 0 0}
+
+/* Timer */
+.timer{font-size:15px;font-weight:700;color:var(--green);font-variant-numeric:tabular-nums}
+
+/* Active banner */
+.active-banner{background:linear-gradient(135deg,#1a3a2a,#1a2a3a);border:1px solid var(--green);border-radius:var(--r);padding:14px 16px;margin:0 16px 12px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.active-dot{width:10px;height:10px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;flex-shrink:0}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 24px;color:var(--txt2)}
+.empty-icon{font-size:52px;margin-bottom:12px}
+.empty-title{font-size:16px;font-weight:600;color:var(--txt);margin-bottom:6px}
+.empty-sub{font-size:13px;line-height:1.5}
+
+/* MD textarea */
+.md-area{width:100%;background:var(--surf3);border:1px solid var(--brd);border-radius:var(--r2);padding:12px;font-size:12px;line-height:1.6;color:var(--txt);resize:none;height:320px;font-family:'Courier New',monospace}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="view"></div>
+  <nav id="nav">
+    <button class="nav-btn active" id="nb-home" onclick="showView('home')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Início</span>
+    </button>
+    <button class="nav-btn" id="nb-fichas" onclick="showView('fichas')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zM8 11h8v2H8zm0 4h8v2H8zm0-8h3v2H8z"/></svg>
+      <span>Fichas</span>
+    </button>
+    <button class="nav-btn nav-plus" id="nb-session" onclick="newSessionFlow()">
+      <div class="nav-plus-inner">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </div>
+      <span style="color:var(--txt2)">Treino</span>
+    </button>
+    <button class="nav-btn" id="nb-history" onclick="showView('history')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+      <span>Histórico</span>
+    </button>
+  </nav>
+</div>
+
+<!-- New Session Sheet -->
+<div class="overlay" id="overlay-new">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Novo Treino</span>
+      <button class="sheet-close" onclick="closeOverlay('overlay-new')">×</button>
+    </div>
+    <div class="sheet-body" style="padding:0 16px 8px">
+      <p class="field-label">Nome do treino</p>
+      <div class="input-wrap" style="margin-bottom:16px">
+        <input id="sess-name-input" type="text" placeholder="Ex: Treino A — Peito/Tríceps" maxlength="60">
+      </div>
+      <p class="field-label">Atalhos rápidos</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px" id="quick-tags">
+        <button class="chip" onclick="setQuickTag(this,'Treino A')">Treino A</button>
+        <button class="chip" onclick="setQuickTag(this,'Treino B')">Treino B</button>
+        <button class="chip" onclick="setQuickTag(this,'Treino C')">Treino C</button>
+        <button class="chip" onclick="setQuickTag(this,'Treino D')">Treino D</button>
+        <button class="chip" onclick="setQuickTag(this,'Full Body')">Full Body</button>
+        <button class="chip" onclick="setQuickTag(this,'Push')">Push</button>
+        <button class="chip" onclick="setQuickTag(this,'Pull')">Pull</button>
+        <button class="chip" onclick="setQuickTag(this,'Legs')">Legs</button>
+        <button class="chip" onclick="setQuickTag(this,'Upper')">Upper</button>
+        <button class="chip" onclick="setQuickTag(this,'Lower')">Lower</button>
+      </div>
+      <div id="ficha-pick-area"></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-primary btn-full" onclick="startSession()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Iniciar Treino
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Exercise Picker Sheet -->
+<div class="overlay" id="overlay-picker">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="picker-title">Adicionar Exercício</span>
+      <button class="sheet-close" onclick="closeOverlay('overlay-picker')">×</button>
+    </div>
+    <div style="padding:0 16px 8px">
+      <div class="input-wrap">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="ex-search" type="text" placeholder="Buscar exercício..." oninput="filterExercises()" autocomplete="off">
+      </div>
+    </div>
+    <div class="chips" id="group-chips"></div>
+    <div class="sheet-body" id="ex-list"></div>
+  </div>
+</div>
+
+<!-- Finish Session Sheet -->
+<div class="overlay" id="overlay-finish">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Finalizar Treino?</span>
+      <button class="sheet-close" onclick="closeOverlay('overlay-finish')">×</button>
+    </div>
+    <div style="padding:12px 16px">
+      <p style="color:var(--txt2);font-size:14px;line-height:1.7" id="finish-summary"></p>
+      <div style="margin-top:14px;display:flex;align-items:center;gap:10px;background:var(--surf2);border-radius:10px;padding:12px 14px;border:1px solid var(--brd)">
+        <input type="checkbox" id="save-as-ficha" style="width:18px;height:18px;cursor:pointer;accent-color:var(--purple)">
+        <label for="save-as-ficha" style="font-size:13px;cursor:pointer">Salvar como Ficha reutilizável</label>
+      </div>
+    </div>
+    <div class="sheet-footer" style="display:flex;gap:10px">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeOverlay('overlay-finish')">Continuar</button>
+      <button class="btn btn-primary" style="flex:1" onclick="finishSession()">Finalizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Markdown Export Sheet -->
+<div class="overlay" id="overlay-md">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Exportar para Claude (.md)</span>
+      <button class="sheet-close" onclick="closeOverlay('overlay-md')">×</button>
+    </div>
+    <div class="sheet-body" style="padding:0 16px 8px">
+      <p style="font-size:12px;color:var(--txt2);margin-bottom:10px">Copie o conteúdo abaixo e cole no Claude para análise:</p>
+      <textarea class="md-area" id="md-text" readonly></textarea>
+    </div>
+    <div class="sheet-footer" style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" style="flex:1" onclick="copyMD()">📋 Copiar tudo</button>
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="downloadMD()">⬇️ Baixar .md</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Ficha Sheet -->
+<div class="overlay" id="overlay-ficha-new">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Nova Ficha de Treino</span>
+      <button class="sheet-close" onclick="closeOverlay('overlay-ficha-new')">×</button>
+    </div>
+    <div class="sheet-body" style="padding:0 16px 8px">
+      <p class="field-label">Nome da ficha</p>
+      <div class="input-wrap" style="margin-bottom:16px">
+        <input id="ficha-name-input" type="text" placeholder="Ex: Treino A — Peito/Tríceps" maxlength="60">
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <p class="field-label" style="margin:0">Exercícios</p>
+        <button class="btn btn-secondary btn-sm" onclick="openPickerForFicha()">+ Adicionar</button>
+      </div>
+      <div id="ficha-ex-draft" style="margin-bottom:8px"></div>
+    </div>
+    <div class="sheet-footer">
+      <button class="btn btn-primary btn-full" onclick="saveFicha()">💾 Salvar Ficha</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Exercise Database ────────────────────────────────────────────────────────
+const DB = {
+  'Peitoral': [
+    'Supino Vertical (Máquina)','Peck Deck (Voador)','Crossover (Polia Alta)',
+    'Crossover (Polia Baixa)','Chest Press Articulado (Convergente)','Supino Inclinado em Máquina',
+    'Supino Declinado em Máquina','Máquina de Fly Inclinado','Press de Peito Sentado (Isolateral)',
+    'Máquina de Pull-over','Smith Machine (para Supinos)','Paralelas Assistidas (Gravitron)',
+    'Supino Reto com Halteres','Supino Inclinado com Halteres','Supino Declinado com Halteres',
+    'Fly com Halteres (Banco Reto)','Fly Inclinado com Halteres',
+    'Press com Pegada Neutra (Máquina)','Floor Press (Halteres/Barra)','Svend Press (Anilhas)',
+    'Flexão de Braços (Apoios fixos)','Máquina Pec Fly (Dual funcional)'
+  ],
+  'Costas': [
+    'Pulldown (Puxada Alta)','Remada Baixa (Triângulo)','Remada Cavalinho (T-Bar Row)',
+    'Remada Unilateral em Máquina','Puxada com Pegada Supinada','Lat Pulldown Articulado',
+    'Remada Curvada (Smith Machine)','Low Row (Remada Baixa Articulada)','High Row (Puxada Alta Articulada)',
+    'Máquina de Lombar (Extensão de Tronco)','Barra Fixa Assistida (Gravitron)','Pull-over na Polia Alta',
+    'Remada com Pegada Aberta (Máquina)','Máquina de Hiperextensão 45°','Remada Cavalinho Livre',
+    'Face Pull (Polia Alta)','Puxada com Barra Romana','Remada Vertical (Máquina)',
+    'Rack Pull (Smith Machine)','Pulldown com Braços Estendidos (Máquina dedicada)'
+  ],
+  'Ombros': [
+    'Desenvolvimento (Shoulder Press) Máquina','Elevação Lateral (Máquina)','Elevação Lateral na Polia',
+    'Desenvolvimento Arnold (Halteres)','Elevação Frontal na Polia','Crucifixo Inverso (Máquina/Peck Deck Inverso)',
+    'Desenvolvimento Smith Machine','Elevação Lateral Sentado (Máquina)','Desenvolvimento com Halteres (Banco)',
+    'Elevação Frontal com Barra','Elevação Frontal com Halter','Remada Alta (Polia Baixa)',
+    'Upright Row (Máquina Articulada)','Face Pull (Cabo)','Elevação Posterior de Ombros (Cabo)',
+    'Military Press (Smith)','Elevação Lateral "Y" (Cabo)','Shoulder Press Frontal (Articulado)',
+    'Elevação Frontal com Anilha','Clean and Press (Halteres)','Landmine Press (Barra fixa no chão)'
+  ],
+  'Trapézio': [
+    'Encolhimento de Ombros (Smith Machine)','Encolhimento em Máquina Específica','Encolhimento com Halteres',
+    'Encolhimento na Máquina de Remada Baixa','Remada Alta (Barra EZ)','Encolhimento por trás (Smith)',
+    'Encolhimento na Polia Baixa',"Farmer's Walk (Halteres)",'Encolhimento na Máquina de Panturrilha em pé',
+    'Face Pull (Enfatizando trapézio superior)','Encolhimento no Leg Press (Técnica avançada)',
+    'Remada Alta com Halteres','Encolhimento Unilateral no Cabo','Prancha com retração escapular',
+    'Encolhimento na barra (Frente)','Encolhimento na barra (Costas)','Overhead Carry (Peso acima da cabeça)',
+    'Rack Shrugs (Smith)','Encolhimento na máquina de Dip (Fundo)','Remada com cotovelos altos (Cabo)'
+  ],
+  'Bíceps': [
+    'Rosca Direta (Cabo)','Rosca Scott (Máquina)','Rosca Scott (Banco com Barra)',
+    'Rosca Alternada (Halteres)','Rosca Martelo (Halteres)','Rosca Concentrada (Banco)',
+    'Biceps Curl Articulado','Rosca Inversa (Cabo)','Rosca 21 (Cabo)',
+    'Rosca no Banco Inclinado (Halteres)','Rosca Spider (Banco)','Rosca "Z" (Cabo)',
+    'Rosca na Polia Alta (Bíceps "Duplo")','Rosca Martelo na Polia','Rosca com Barra W',
+    'Rosca Direta no Smith','Rosca Unilateral no Cabo','Rosca Drag (Barra/Cabo)',
+    'Rosca em Máquina de Isometria','Rosca com Apoio de Peito (Máquina)'
+  ],
+  'Tríceps': [
+    'Tríceps Pulley (Barra Reta)','Tríceps Corda','Tríceps Testa (Cabo/Barra EZ)',
+    'Tríceps Coice (Cabo)','Extensão de Tríceps Sentado (Máquina)','Tríceps Francês (Halteres)',
+    'Tríceps Francês (Cabo)','Mergulho em Máquina (Dip Machine)','Tríceps Supinado (Smith Machine)',
+    'Paralelas (Gravitron)','Extensão Overhead (Corda)','Tríceps Unilateral (Cabo Inverso)',
+    'Tríceps Banco (Apoio)','Pushdown com Pegada em V','Extensão de Tríceps Deitado (Halteres)',
+    'Tate Press (Halteres)','JM Press (Smith Machine)','Kickback Unilateral (Máquina)',
+    'Extensão de cotovelo inclinada (Cabo)','Tríceps Pressdown Articulado'
+  ],
+  'Antebraço': [
+    'Rosca de Punho (Barra/Cabo)','Rosca de Punho Inversa (Barra/Cabo)','Wrist Roller (Rolo de punho)',
+    'Rosca Inversa (Barra W)','Rosca Martelo (Halteres)','Pinça com Anilhas (Segurar anilhas)',
+    "Farmer's Walk (Halteres pesados)",'Dead Hang (Barra fixa - Isometria)','Flexão de Punho com Halter',
+    'Extensão de Punho com Halter','Hand Grip (Aparelho de mola)','Rosca Inversa na Polia Baixa',
+    'Wrist Curl em Máquina de Bíceps','Giro de Punho (Cabo)','Sustentação de Barra (Isometria)',
+    'Rosca Zottman (Halteres)','Flexão de braço sobre os dedos','Barra Fixa com Toalha (Puxada)',
+    'Rosca de punho por trás das costas (Barra)','Máquina de Antebraço (Rotacional)'
+  ],
+  'Pernas': [
+    'Cadeira Extensora','Leg Press 45°','Leg Press Horizontal',
+    'Agachamento Hack (Hack Machine)','Smith Machine (Agachamento)','Agachamento Pendulum (Pendulum Squat)',
+    'Belt Squat (Agachamento com Cinto)','Máquina de Agachamento Articulada','Sissy Squat (Banco específico)',
+    'Cadeira Abdutora','Cadeira Adutora','Glúteo Máquina (Vertical)',
+    'Glúteo Máquina (Horizontal/Kickback)','Elevação Pélvica (Máquina dedicada)','Goblet Squat (Halteres)',
+    'Avanço (Smith Machine)','Step Up (Banco/Caixa)','Bulgarian Split Squat (Banco)',
+    'Máquina de Adução deitada','Multi-Hip (Máquina multi-funcional de quadril)'
+  ],
+  'Posterior de Perna': [
+    'Mesa Flexora (Deitado)','Cadeira Flexora (Sentado)','Flexora Vertical (Em pé)',
+    'Stiff (Halteres)','Stiff (Smith Machine)','Good Morning (Smith Machine)',
+    'Flexora Unilateral (Cabo)','Hiperextensão Lombar (Focando posterior)','Glute Ham Raise (Banco GHD)',
+    'Leg Press 45° (Pés no alto)','Flexora deitada com Halter entre os pés','Levantamento Terra (Smith)',
+    'Nordic Curl (Banco específico)','Flexão de pernas na polia baixa','Agachamento Sumô (Halteres)',
+    'Elevação Pélvica (Focando isquios)','Máquina de Stiff Articulada','Kettlebell Swing',
+    'Coice na Polia (Perna estendida)','Máquina de tração de quadril'
+  ],
+  'Panturrilha': [
+    'Gêmeos Sentado (Máquina cavalinho)','Gêmeos em pé (Máquina vertical)','Panturrilha no Leg Press 45°',
+    'Panturrilha no Leg Press Horizontal','Panturrilha no Hack Machine','Gêmeos no Smith Machine',
+    'Gêmeos Unilateral com Halter','Panturrilha na Máquina de Agachamento','Donkey Calf Raise (Máquina ou Smith)',
+    'Panturrilha na Polia Baixa (em pé)','Tibial Anterior (Máquina específica/Anilha)',
+    'Gêmeos Sentado (Halteres sobre o joelho)','Panturrilha no degrau (Smith)','Rotary Calf (Máquina rotatória)',
+    'Panturrilha em 45 graus (Máquina dedicada)','Salto com sobrecarga (Halteres)',
+    "Caminhada nas pontas dos pés (Farmer's walk modificado)",'Panturrilha "em V" no Smith',
+    'Flexão plantar sentada no Leg Press','Máquina de panturrilha isolateral'
+  ],
+  'Abdominal': [
+    'Máquina de Crunch Sentado','Abdominal na Polia Alta (Corda)','Banco Abdominal Inclinado',
+    'Elevação de Pernas (Paralelas/Capitão)','Roda Abdominal (Ab Wheel)','Máquina de Rotação de Tronco (Torso Rotation)',
+    'Crunch no Banco Declinado','Elevação de Pernas Suspenso (Barra fixa)','Abdominal "Lenhador" (Cabo)',
+    'Máquina de Crunch Lateral','Prancha com pesos (Anilhas)','Crunch com Halter (Banco)',
+    'Abdominal Remador (Banco)','V-Up com pesos','Russian Twist (Anilha/Kettlebell)',
+    'Abdominal Infra na Polia Baixa','Máquina Abdominal Funcional (Articulada)',
+    'Prancha Lateral na Máquina de Lombar','Dead Bug com resistência (Elásticos/Cabos)','Sit-up no Banco GHD'
+  ]
+};
+
+const GC = {
+  'Peitoral':'#e94560','Costas':'#4361ee','Ombros':'#f39c12','Trapézio':'#9b59b6',
+  'Bíceps':'#1abc9c','Tríceps':'#e67e22','Antebraço':'#27ae60','Pernas':'#3498db',
+  'Posterior de Perna':'#e74c3c','Panturrilha':'#16a085','Abdominal':'#d35400'
+};
+const GROUPS = Object.keys(DB);
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let activeSession = null;
+let sessions = [];
+let templates = [];   // fichas salvas
+let timerInterval = null;
+let currentView = 'home';
+let pickerFilter = 'Todos';
+let pickerMode = 'session'; // 'session' | 'ficha'
+let fichaDraft = [];         // exercícios sendo adicionados à nova ficha
+let currentMD = '';
+let currentMDName = '';
+
+function loadData() {
+  try {
+    sessions  = JSON.parse(localStorage.getItem('gt_sessions')  || '[]');
+    templates = JSON.parse(localStorage.getItem('gt_templates') || '[]');
+    const saved = localStorage.getItem('gt_active');
+    if (saved) activeSession = JSON.parse(saved);
+  } catch(e) { sessions = []; templates = []; activeSession = null; }
+}
+function saveData() {
+  localStorage.setItem('gt_sessions',  JSON.stringify(sessions));
+  localStorage.setItem('gt_templates', JSON.stringify(templates));
+  if (activeSession) localStorage.setItem('gt_active', JSON.stringify(activeSession));
+  else localStorage.removeItem('gt_active');
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function startTimer() {
+  clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    const el = document.getElementById('elapsed-timer');
+    if (el && activeSession) el.textContent = fmtDur(Date.now() - activeSession.startTime);
+  }, 1000);
+}
+function fmtDur(ms) {
+  const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+  return h>0?`${h}h ${m%60}m`:`${m}m ${s%60}s`;
+}
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}); }
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDateFull(ts) { return new Date(ts).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'}); }
+function calcVol(sess) {
+  let v=0;
+  (sess.exercises||[]).forEach(ex=>(ex.sets||[]).forEach(s=>{ if(s.done) v+=(s.reps||0)*(s.weight||0); }));
+  return v;
+}
+function calcStreak() {
+  if(!sessions.length) return 0;
+  const days=new Set(sessions.map(s=>new Date(s.startTime).toDateString()));
+  let streak=0,d=new Date();
+  while(days.has(d.toDateString())){streak++;d.setDate(d.getDate()-1);}
+  return streak;
+}
+function esc(s){return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");}
+function dot(g){return `<span style="width:8px;height:8px;border-radius:50%;background:${GC[g]||'#888'};display:inline-block;flex-shrink:0"></span>`;}
+
+// ─── Navigation ───────────────────────────────────────────────────────────────
+function showView(v) {
+  currentView = v;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const map={home:'nb-home',fichas:'nb-fichas',active:'nb-session',history:'nb-history'};
+  const btn=document.getElementById(map[v]||'nb-home');
+  if(btn) btn.classList.add('active');
+  const vw=document.getElementById('view');
+  if(v==='home')    vw.innerHTML=renderHome();
+  else if(v==='active'){vw.innerHTML=renderActive();startTimer();}
+  else if(v==='history') vw.innerHTML=renderHistory();
+  else if(v==='fichas')  vw.innerHTML=renderFichas();
+  vw.scrollTop=0;
+}
+
+// ─── HOME ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  const week=sessions.filter(s=>Date.now()-s.startTime<7*86400000).length;
+  const total=sessions.length;
+  const last=sessions[sessions.length-1];
+  let banner='';
+  if(activeSession){
+    banner=`<div class="active-banner" onclick="showView('active')">
+      <div class="active-dot"></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:15px">${activeSession.name}</div>
+        <div style="font-size:12px;color:var(--txt2);margin-top:2px">${activeSession.exercises.length} exercício(s) • Em andamento</div>
+      </div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    </div>`;
+  }
+  let lastCard='';
+  if(last&&!activeSession){
+    lastCard=`<div class="card" onclick="showView('history')" style="cursor:pointer">
+      <div style="font-size:11px;color:var(--txt2);margin-bottom:4px">ÚLTIMO TREINO</div>
+      <div style="font-size:16px;font-weight:700">${last.name}</div>
+      <div style="font-size:12px;color:var(--txt2);margin-top:4px">${fmtDate(last.startTime)} • ${last.exercises.length} exercícios • ${calcVol(last).toLocaleString('pt-BR')} kg vol.</div>
+    </div>`;
+  }
+  return `<div class="page">
+    <div class="page-header" style="padding-bottom:0">
+      <div class="page-title">💪 GymTrack Pro</div>
+      <div class="page-subtitle">${new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})}</div>
+    </div>
+    <div class="stats-bar" style="padding-top:16px">
+      <div class="stat-box"><div class="stat-val">${week}</div><div class="stat-lbl">Esta semana</div></div>
+      <div class="stat-box"><div class="stat-val">${total}</div><div class="stat-lbl">Total treinos</div></div>
+      <div class="stat-box"><div class="stat-val">${calcStreak()}</div><div class="stat-lbl">Sequência dias</div></div>
+    </div>
+    ${banner}${lastCard}
+    <div style="padding:0 16px">
+      ${activeSession
+        ?`<button class="btn btn-primary btn-full" onclick="showView('active')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Retomar Treino Ativo</button>`
+        :`<button class="btn btn-primary btn-full" onclick="newSessionFlow()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+            Iniciar Novo Treino</button>`}
+    </div>
+    ${total>0?renderMiniHistory():''}
+  </div>`;
+}
+function renderMiniHistory(){
+  const last3=sessions.slice(-3).reverse();
+  return `<div style="padding:20px 16px 0">
+    <div style="font-size:13px;font-weight:700;color:var(--txt2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">Recentes</div>
+    ${last3.map(s=>`<div class="card" style="margin:0 0 10px;cursor:pointer" onclick="showView('history')">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:14px;font-weight:600">${s.name}</div>
+          <div style="font-size:11px;color:var(--txt2);margin-top:3px">${fmtDate(s.startTime)} • ${s.exercises.length} exercícios</div></div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:700;color:var(--acc)">${calcVol(s).toLocaleString('pt-BR')} kg</div>
+          <div style="font-size:11px;color:var(--txt2)">${fmtDur(s.duration||0)}</div>
+        </div>
+      </div></div>`).join('')}
+  </div>`;
+}
+
+// ─── ACTIVE SESSION ───────────────────────────────────────────────────────────
+function renderActive() {
+  if(!activeSession) return renderHome();
+  const cards=(activeSession.exercises||[]).map((ex,i)=>renderExCard(ex,i)).join('');
+  return `<div class="page">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title" style="font-size:18px">${activeSession.name}</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px">
+            <span id="elapsed-timer" class="timer">0m 0s</span>
+            <span style="color:var(--txt2);font-size:13px">• ${activeSession.exercises.length} ex.</span>
+          </div>
+        </div>
+        <button class="btn btn-green btn-sm" onclick="openFinish()">Finalizar</button>
+      </div>
+    </div>
+    <div id="ex-cards">
+      ${cards||`<div style="padding:24px 16px;color:var(--txt2);text-align:center;font-size:14px">Nenhum exercício ainda.<br>Adicione abaixo.</div>`}
+    </div>
+    <div style="padding:0 16px 24px">
+      <button class="btn btn-secondary btn-full" onclick="openPicker('session')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        Adicionar Exercício</button>
+    </div>
+  </div>`;
+}
+function renderExCard(ex,i){
+  const done=(ex.sets||[]).filter(s=>s.done).length;
+  const total=(ex.sets||[]).length;
+  const c=GC[ex.group]||'#888';
+  const rows=(ex.sets||[]).map((s,j)=>`
+    <tr>
+      <td class="set-num">${j+1}</td>
+      <td><input class="set-input" type="number" min="0" max="999" placeholder="Reps"
+        value="${s.reps||''}" onchange="updateSet(${i},${j},'reps',this.value)" inputmode="numeric"></td>
+      <td><input class="set-input" type="number" min="0" max="9999" step="0.5" placeholder="kg"
+        value="${s.weight||''}" onchange="updateSet(${i},${j},'weight',this.value)" inputmode="decimal"></td>
+      <td><button class="set-done ${s.done?'checked':''}" onclick="toggleSet(${i},${j})">✓</button></td>
+      <td><button class="set-del" onclick="delSet(${i},${j})">✕</button></td>
+    </tr>`).join('');
+  return `<div class="sess-ex" id="excard-${i}">
+    <div class="sess-ex-header" onclick="toggleExCard(${i})">
+      <div style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0"></div>
+      <div style="flex:1">
+        <div class="sess-ex-name">${ex.name}</div>
+        <div class="sess-ex-meta">${ex.group} • ${done}/${total} séries</div>
+      </div>
+      <button onclick="event.stopPropagation();removeExercise(${i})" style="background:none;color:var(--txt2);font-size:18px;padding:4px">✕</button>
+    </div>
+    <div class="sess-ex-body open" id="exbody-${i}">
+      <table class="sets-table">
+        <thead><tr><th>#</th><th>Reps</th><th>Carga (kg)</th><th>✓</th><th></th></tr></thead>
+        <tbody id="sets-${i}">${rows}</tbody>
+      </table>
+      <button class="btn btn-secondary btn-sm btn-full" onclick="addSet(${i})">+ Série</button>
+    </div>
+  </div>`;
+}
+function toggleExCard(i){
+  const b=document.getElementById(`exbody-${i}`);
+  if(b) b.classList.toggle('open');
+}
+
+// ─── FICHAS VIEW ──────────────────────────────────────────────────────────────
+function renderFichas(){
+  const cards=templates.map((t,i)=>renderFichaCard(t,i)).join('');
+  return `<div class="page">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div class="page-title">📋 Fichas de Treino</div>
+          <div class="page-subtitle">${templates.length} ficha(s) salva(s)</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openNewFicha()">+ Nova</button>
+      </div>
+    </div>
+    ${cards||`<div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhuma ficha salva</div>
+      <div class="empty-sub">Crie uma ficha com seus exercícios favoritos e reutilize a qualquer momento.</div>
+      <button class="btn btn-primary" style="margin:16px auto 0" onclick="openNewFicha()">Criar primeira ficha</button>
+    </div>`}
+  </div>`;
+}
+function renderFichaCard(t,i){
+  const groups=[...new Set(t.exercises.map(e=>e.group))];
+  const exTags=t.exercises.map(e=>
+    `<span class="ficha-ex-tag">${dot(e.group)} ${e.name}</span>`
+  ).join('');
+  return `<div class="ficha-card">
+    <div class="ficha-header">
+      <div style="flex:1">
+        <div class="ficha-name">${t.name}</div>
+        <div class="ficha-meta">${t.exercises.length} exercícios • ${groups.join(', ')}</div>
+      </div>
+    </div>
+    <div class="ficha-ex-list" style="padding-top:10px">${exTags}</div>
+    <div style="padding:12px 16px;display:flex;gap:8px;border-top:1px solid var(--brd);margin-top:8px">
+      <button class="btn btn-primary btn-sm" style="flex:2" onclick="startFromFicha(${i})">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        Iniciar com esta ficha</button>
+      <button class="btn btn-secondary btn-sm" style="flex:1" onclick="editFicha(${i})">✏️ Editar</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteFicha(${i})">🗑</button>
+    </div>
+  </div>`;
+}
+
+// ─── HISTORY ──────────────────────────────────────────────────────────────────
+function renderHistory(){
+  if(!sessions.length) return `<div class="page">
+    <div class="page-header"><div class="page-title">Histórico</div></div>
+    <div class="empty"><div class="empty-icon">📋</div>
+      <div class="empty-title">Nenhum treino registrado</div>
+      <div class="empty-sub">Inicie um treino e finalize para aparecer aqui.</div></div></div>`;
+  const cards=[...sessions].reverse().map((s,i)=>renderHistCard(s,sessions.length-1-i)).join('');
+  return `<div class="page">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="page-title">Histórico</div>
+        <span style="font-size:13px;color:var(--txt2)">${sessions.length} treinos</span>
+      </div>
+    </div>${cards}</div>`;
+}
+function renderHistCard(s,idx){
+  const vol=calcVol(s);
+  const dur=s.duration?fmtDur(s.duration):'—';
+  const groups=[...new Set((s.exercises||[]).map(e=>e.group))];
+  const dots=groups.map(g=>dot(g)).join('');
+  const exRows=(s.exercises||[]).map(ex=>{
+    const txt=(ex.sets||[]).filter(s=>s.done).map(s=>`${s.reps}×${s.weight}kg`).join(' · ');
+    return `<div class="hist-ex-row">
+      <div class="hist-ex-name" style="color:${GC[ex.group]||'var(--txt)'}">${ex.name}</div>
+      <div class="hist-sets">${txt||'Nenhuma série'}</div></div>`;
+  }).join('');
+  return `<div class="hist-card">
+    <div class="hist-header" onclick="toggleHist('hb-${idx}')">
+      <div style="flex:1">
+        <div class="hist-date">${fmtDate(s.startTime)} ${fmtTime(s.startTime)}</div>
+        <div class="hist-name">${s.name}</div>
+        <div class="hist-meta"><span class="hist-tag" style="display:flex;align-items:center;gap:4px">${dots}<span style="margin-left:4px">${groups.join(', ')}</span></span></div>
+        <div class="hist-meta" style="margin-top:4px">
+          <span class="hist-tag">⏱ ${dur}</span>
+          <span class="hist-tag">🏋️ ${s.exercises.length} ex.</span>
+          <span class="hist-tag">📦 ${vol.toLocaleString('pt-BR')} kg</span>
+        </div>
+      </div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:var(--txt2)"><path d="M7 10l5 5 5-5z"/></svg>
+    </div>
+    <div class="hist-body" id="hb-${idx}">
+      ${exRows}
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="btn btn-secondary btn-sm" style="flex:1" onclick="openMDExport(${idx})">
+          📝 Exportar .md (Claude)</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSession(${idx})">🗑</button>
+      </div>
+    </div>
+  </div>`;
+}
+function toggleHist(id){const el=document.getElementById(id);if(el)el.classList.toggle('open');}
+
+// ─── SESSION ACTIONS ──────────────────────────────────────────────────────────
+function newSessionFlow(){
+  if(activeSession){showView('active');return;}
+  document.getElementById('sess-name-input').value='';
+  document.querySelectorAll('#quick-tags .chip').forEach(c=>c.classList.remove('active'));
+  // show ficha picker in sheet if templates exist
+  const fp=document.getElementById('ficha-pick-area');
+  if(templates.length){
+    fp.innerHTML=`<p class="field-label">Ou iniciar com uma Ficha salva</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+        ${templates.map((t,i)=>`<button class="btn btn-purple btn-sm" onclick="startFromFichaInNew(${i})" style="justify-content:flex-start;text-align:left">
+          📋 ${t.name} <span style="font-size:11px;color:var(--txt2);margin-left:auto">${t.exercises.length} ex.</span></button>`).join('')}
+      </div>`;
+  } else { fp.innerHTML=''; }
+  openOverlay('overlay-new');
+  setTimeout(()=>document.getElementById('sess-name-input').focus(),300);
+}
+function setQuickTag(el,tag){
+  document.querySelectorAll('#quick-tags .chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('sess-name-input').value=tag;
+}
+function startSession(exercises){
+  const name=document.getElementById('sess-name-input').value.trim()||
+    `Treino ${new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}`;
+  activeSession={id:Date.now(),name,startTime:Date.now(),
+    exercises:(exercises||[]).map(e=>({...e,sets:[{reps:'',weight:'',done:false}]}))};
+  saveData();
+  closeOverlay('overlay-new');
+  showView('active');
+}
+function startFromFichaInNew(i){
+  const t=templates[i];
+  document.getElementById('sess-name-input').value=t.name;
+  document.querySelectorAll('#quick-tags .chip').forEach(c=>c.classList.remove('active'));
+  // mark selected
+  const fp=document.getElementById('ficha-pick-area');
+  fp.querySelectorAll('button').forEach((b,j)=>{
+    b.style.borderColor=j===i?'var(--acc)':'';
+    b.style.color=j===i?'var(--acc)':'';
+  });
+  // store pending exercises
+  startSession.__fichaExs = t.exercises;
+  // override start button
+  document.querySelector('#overlay-new .sheet-footer .btn').onclick=()=>startSession(startSession.__fichaExs||[]);
+}
+function startFromFicha(i){
+  if(activeSession){if(!confirm('Há um treino ativo. Descartar e iniciar com a ficha?'))return; activeSession=null;}
+  const t=templates[i];
+  activeSession={id:Date.now(),name:t.name,startTime:Date.now(),
+    exercises:t.exercises.map(e=>({...e,sets:[{reps:'',weight:'',done:false}]}))};
+  saveData();
+  showView('active');
+}
+
+// ─── PICKER ───────────────────────────────────────────────────────────────────
+function openPicker(mode){
+  pickerMode=mode||'session';
+  pickerFilter='Todos';
+  document.getElementById('ex-search').value='';
+  document.getElementById('picker-title').textContent=mode==='ficha'?'Adicionar à Ficha':'Adicionar Exercício';
+  renderGroupChips();filterExercises();
+  openOverlay('overlay-picker');
+}
+function renderGroupChips(){
+  document.getElementById('group-chips').innerHTML=
+    ['Todos',...GROUPS].map(g=>`<button class="chip ${g===pickerFilter?'active':''}" onclick="setPickerFilter('${esc(g)}')">${g}</button>`).join('');
+}
+function setPickerFilter(g){pickerFilter=g;renderGroupChips();filterExercises();}
+function filterExercises(){
+  const q=document.getElementById('ex-search').value.toLowerCase();
+  let html='';
+  GROUPS.forEach(group=>{
+    if(pickerFilter!=='Todos'&&pickerFilter!==group) return;
+    const exs=DB[group].filter(n=>!q||n.toLowerCase().includes(q));
+    if(!exs.length) return;
+    if(pickerFilter==='Todos') html+=`<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">${group}</div>`;
+    html+=`<div style="background:var(--surf2);margin:0 0 2px">`;
+    exs.forEach(name=>{
+      const c=GC[group];
+      html+=`<div class="ex-item" onclick="${pickerMode==='ficha'?`addToFichaDraft('${esc(name)}','${esc(group)}')`:`addExercise('${esc(name)}','${esc(group)}')`}">
+        <div style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></div>
+        <div><div class="ex-name">${name}</div><div class="ex-group">${group}</div></div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  document.getElementById('ex-list').innerHTML=html||`<div style="padding:32px;text-align:center;color:var(--txt2)">Nenhum exercício encontrado</div>`;
+}
+function addExercise(name,group){
+  if(!activeSession) return;
+  if(!activeSession.exercises.find(e=>e.name===name))
+    activeSession.exercises.push({name,group,sets:[{reps:'',weight:'',done:false}]});
+  saveData();
+  closeOverlay('overlay-picker');
+  showView('active');
+}
+function removeExercise(i){
+  if(!confirm('Remover exercício?')) return;
+  activeSession.exercises.splice(i,1);
+  saveData();showView('active');
+}
+
+// ─── SETS ─────────────────────────────────────────────────────────────────────
+function addSet(i){
+  const last=activeSession.exercises[i].sets.slice(-1)[0]||{};
+  activeSession.exercises[i].sets.push({reps:last.reps||'',weight:last.weight||'',done:false});
+  saveData();
+  const tbody=document.getElementById(`sets-${i}`);
+  if(tbody){
+    const j=activeSession.exercises[i].sets.length-1;
+    const s=activeSession.exercises[i].sets[j];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td class="set-num">${j+1}</td>
+      <td><input class="set-input" type="number" min="0" max="999" placeholder="Reps"
+        value="${s.reps||''}" onchange="updateSet(${i},${j},'reps',this.value)" inputmode="numeric"></td>
+      <td><input class="set-input" type="number" min="0" max="9999" step="0.5" placeholder="kg"
+        value="${s.weight||''}" onchange="updateSet(${i},${j},'weight',this.value)" inputmode="decimal"></td>
+      <td><button class="set-done" onclick="toggleSet(${i},${j})">✓</button></td>
+      <td><button class="set-del" onclick="delSet(${i},${j})">✕</button></td>`;
+    tbody.appendChild(tr);
+  }
+  updateExMeta(i);
+}
+function delSet(i,j){activeSession.exercises[i].sets.splice(j,1);saveData();showView('active');}
+function updateSet(i,j,field,val){
+  activeSession.exercises[i].sets[j][field]=field==='reps'?parseInt(val)||'':parseFloat(val)||'';
+  saveData();updateExMeta(i);
+}
+function toggleSet(i,j){
+  activeSession.exercises[i].sets[j].done=!activeSession.exercises[i].sets[j].done;
+  saveData();
+  const btn=document.querySelector(`#sets-${i} tr:nth-child(${j+1}) .set-done`);
+  if(btn) btn.classList.toggle('checked',activeSession.exercises[i].sets[j].done);
+  updateExMeta(i);
+}
+function updateExMeta(i){
+  const ex=activeSession.exercises[i];
+  const done=ex.sets.filter(s=>s.done).length;
+  const el=document.querySelector(`#excard-${i} .sess-ex-meta`);
+  if(el) el.textContent=`${ex.group} • ${done}/${ex.sets.length} séries`;
+}
+
+// ─── FINISH SESSION ───────────────────────────────────────────────────────────
+function openFinish(){
+  const ex=activeSession.exercises.length;
+  const sets=activeSession.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
+  const vol=calcVol(activeSession);
+  document.getElementById('finish-summary').innerHTML=
+    `<strong>${activeSession.name}</strong><br><br>
+    ⏱ Duração: <strong>${fmtDur(Date.now()-activeSession.startTime)}</strong><br>
+    🏋️ Exercícios: <strong>${ex}</strong><br>
+    ✅ Séries concluídas: <strong>${sets}</strong><br>
+    📦 Volume total: <strong>${vol.toLocaleString('pt-BR')} kg</strong>`;
+  document.getElementById('save-as-ficha').checked=false;
+  openOverlay('overlay-finish');
+}
+function finishSession(){
+  activeSession.duration=Date.now()-activeSession.startTime;
+  activeSession.endTime=Date.now();
+  // save as ficha if checked
+  if(document.getElementById('save-as-ficha').checked){
+    const exists=templates.find(t=>t.name===activeSession.name);
+    if(!exists){
+      templates.push({id:Date.now(),name:activeSession.name,
+        exercises:activeSession.exercises.map(e=>({name:e.name,group:e.group}))});
+    }
+  }
+  sessions.push(activeSession);
+  activeSession=null;
+  clearInterval(timerInterval);
+  saveData();
+  closeOverlay('overlay-finish');
+  showView('history');
+}
+function deleteSession(idx){
+  if(!confirm('Excluir este treino permanentemente?')) return;
+  sessions.splice(idx,1);saveData();showView('history');
+}
+
+// ─── FICHAS CRUD ──────────────────────────────────────────────────────────────
+function openNewFicha(){
+  fichaDraft=[];
+  document.getElementById('ficha-name-input').value='';
+  renderFichaDraft();
+  openOverlay('overlay-ficha-new');
+  setTimeout(()=>document.getElementById('ficha-name-input').focus(),300);
+}
+function openPickerForFicha(){openPicker('ficha');}
+function addToFichaDraft(name,group){
+  if(!fichaDraft.find(e=>e.name===name)) fichaDraft.push({name,group});
+  closeOverlay('overlay-picker');
+  renderFichaDraft();
+}
+function renderFichaDraft(){
+  const el=document.getElementById('ficha-ex-draft');
+  if(!el) return;
+  if(!fichaDraft.length){el.innerHTML=`<div style="font-size:13px;color:var(--txt2);padding:8px 0">Nenhum exercício adicionado.</div>`;return;}
+  el.innerHTML=fichaDraft.map((e,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--brd)">
+      ${dot(e.group)}
+      <div style="flex:1;font-size:13px">${e.name}<br><span style="font-size:11px;color:var(--txt2)">${e.group}</span></div>
+      <button onclick="removeFichaDraft(${i})" style="background:none;color:var(--txt2);font-size:16px">✕</button>
+    </div>`).join('');
+}
+function removeFichaDraft(i){fichaDraft.splice(i,1);renderFichaDraft();}
+function saveFicha(){
+  const name=document.getElementById('ficha-name-input').value.trim();
+  if(!name){alert('Digite um nome para a ficha.');return;}
+  if(!fichaDraft.length){alert('Adicione pelo menos um exercício.');return;}
+  templates.push({id:Date.now(),name,exercises:[...fichaDraft]});
+  saveData();closeOverlay('overlay-ficha-new');
+  fichaDraft=[];showView('fichas');
+}
+function editFicha(i){
+  const t=templates[i];
+  fichaDraft=[...t.exercises];
+  document.getElementById('ficha-name-input').value=t.name;
+  renderFichaDraft();
+  // override save to update instead of push
+  document.querySelector('#overlay-ficha-new .sheet-footer .btn').onclick=()=>{
+    const name=document.getElementById('ficha-name-input').value.trim();
+    if(!name||!fichaDraft.length){alert('Preencha nome e exercícios.');return;}
+    templates[i]={...templates[i],name,exercises:[...fichaDraft]};
+    saveData();closeOverlay('overlay-ficha-new');fichaDraft=[];showView('fichas');
+    document.querySelector('#overlay-ficha-new .sheet-footer .btn').onclick=saveFicha;
+  };
+  openOverlay('overlay-ficha-new');
+}
+function deleteFicha(i){
+  if(!confirm('Excluir esta ficha?')) return;
+  templates.splice(i,1);saveData();showView('fichas');
+}
+
+// ─── MARKDOWN EXPORT ─────────────────────────────────────────────────────────
+function buildMD(s){
+  const vol=calcVol(s);
+  const dur=s.duration?fmtDur(s.duration):'—';
+  const groups=[...new Set((s.exercises||[]).map(e=>e.group))];
+  const totalSets=s.exercises.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0);
+  let md=`# Treino: ${s.name}\n\n`;
+  md+=`**Data:** ${fmtDateFull(s.startTime)} às ${fmtTime(s.startTime)}\n`;
+  md+=`**Duração:** ${dur}\n`;
+  md+=`**Grupos musculares:** ${groups.join(', ')}\n\n`;
+  md+=`## Resumo da Sessão\n\n`;
+  md+=`| Métrica | Valor |\n|---|---|\n`;
+  md+=`| Exercícios realizados | ${s.exercises.length} |\n`;
+  md+=`| Séries concluídas | ${totalSets} |\n`;
+  md+=`| Volume total | ${vol.toLocaleString('pt-BR')} kg |\n\n`;
+  md+=`## Detalhamento dos Exercícios\n\n`;
+  s.exercises.forEach((ex,n)=>{
+    const doneSets=ex.sets.filter(s=>s.done);
+    const exVol=doneSets.reduce((a,s)=>a+(s.reps||0)*(s.weight||0),0);
+    md+=`### ${n+1}. ${ex.name} · ${ex.group}\n\n`;
+    if(doneSets.length){
+      md+=`| Série | Repetições | Carga (kg) | Volume (kg) |\n|---|---|---|---|\n`;
+      doneSets.forEach((s,i)=>{
+        md+=`| ${i+1} | ${s.reps||'—'} | ${s.weight||'—'} | ${((s.reps||0)*(s.weight||0)).toLocaleString('pt-BR')} |\n`;
+      });
+      md+=`\n**Volume do exercício: ${exVol.toLocaleString('pt-BR')} kg**\n\n`;
+    } else {
+      md+=`*Nenhuma série marcada como concluída.*\n\n`;
+    }
+    md+=`---\n\n`;
+  });
+  md+=`*Gerado por GymTrack Pro em ${new Date().toLocaleDateString('pt-BR')}*\n`;
+  return md;
+}
+function openMDExport(idx){
+  const s=sessions[idx];
+  currentMD=buildMD(s);
+  currentMDName=`treino-${s.name.replace(/[^a-z0-9]/gi,'-').toLowerCase()}`;
+  document.getElementById('md-text').value=currentMD;
+  openOverlay('overlay-md');
+}
+function copyMD(){
+  navigator.clipboard.writeText(currentMD).then(()=>{
+    const btn=document.querySelector('#overlay-md .sheet-footer .btn');
+    const orig=btn.textContent;btn.textContent='✅ Copiado!';
+    setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>{
+    document.getElementById('md-text').select();
+    document.execCommand('copy');
+  });
+}
+function downloadMD(){
+  const blob=new Blob([currentMD],{type:'text/markdown'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`${currentMDName}.md`;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+
+// ─── OVERLAYS ─────────────────────────────────────────────────────────────────
+function openOverlay(id){document.getElementById(id).classList.add('show');}
+function closeOverlay(id){document.getElementById(id).classList.remove('show');}
+document.addEventListener('click',e=>{
+  ['overlay-new','overlay-picker','overlay-finish','overlay-md','overlay-ficha-new'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el&&e.target===el) closeOverlay(id);
+  });
+});
+
+// ─── PWA ──────────────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+loadData();
+// fix start button default onclick
+document.querySelector('#overlay-new .sheet-footer .btn').onclick=()=>startSession();
+activeSession ? showView('active') : showView('home');
+</script>
+</body>
+</html>
