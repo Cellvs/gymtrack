@@ -73,8 +73,23 @@ input::placeholder,textarea::placeholder{color:var(--txt2)}
 .ex-name{font-size:14px;font-weight:500;flex:1}
 .ex-group{font-size:11px;color:var(--txt2);margin-top:2px}
 
+/* Picker — grupo grid */
+.group-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 20px}
+.group-card{background:var(--surf2);border-radius:var(--r);padding:14px 12px;border:1px solid var(--brd);cursor:pointer;display:flex;align-items:center;gap:10px;transition:border-color .15s}
+.group-card:active{background:var(--surf3);border-color:var(--acc)}
+.group-card-info{flex:1;min-width:0}
+.group-card-name{font-size:13px;font-weight:600;line-height:1.3}
+.group-card-count{font-size:11px;color:var(--txt2);margin-top:2px}
+
+/* Picker — seleção múltipla */
+.ex-check-item{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--brd);gap:12px;cursor:pointer;user-select:none}
+.ex-check-item:active{background:var(--surf2)}
+.ex-checkbox{width:24px;height:24px;border-radius:7px;border:2px solid var(--brd);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;transition:all .15s;color:transparent}
+.ex-checkbox.checked{background:var(--acc);border-color:var(--acc);color:#fff}
+.picker-sel-bar{padding:10px 16px;background:var(--surf2);border-bottom:1px solid var(--brd);font-size:13px;font-weight:600;color:var(--acc);display:flex;align-items:center;gap:8px}
+
 /* Active exercise card */
-.sess-ex{background:var(--surf);border-radius:var(--r);margin:0 16px 10px;border:1px solid var(--brd);overflow:hidden}
+.sess-ex{background:var(--surf);border-radius:var(--r);margin:0 16px 10px;border:1px solid var(--brd);overflow:hidden;transition:border-color .15s,opacity .2s}
 .sess-ex-header{display:flex;align-items:center;padding:13px 14px;gap:10px;cursor:pointer}
 .sess-ex-header:active{background:var(--surf2)}
 .sess-ex-name{flex:1;font-size:14px;font-weight:600}
@@ -87,9 +102,17 @@ input::placeholder,textarea::placeholder{color:var(--txt2)}
 .set-num{font-size:13px;color:var(--txt2);font-weight:600;width:28px}
 .set-input{background:var(--surf3);border:1px solid var(--brd);border-radius:7px;padding:7px 8px;font-size:14px;font-weight:600;color:var(--txt);text-align:center;width:60px}
 .set-input:focus{border-color:var(--acc)}
+.set-input-time{background:var(--surf3);border:1px solid var(--brd);border-radius:7px;padding:7px 6px;font-size:13px;font-weight:600;color:var(--txt);text-align:center;width:52px}
+.set-input-time:focus{border-color:var(--blue)}
 .set-done{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surf3);border:1px solid var(--brd);cursor:pointer;font-size:16px;transition:all .2s}
 .set-done.checked{background:#1a3a2a;border-color:var(--green);color:var(--green)}
 .set-del{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:none;color:var(--txt2);font-size:16px;cursor:pointer}
+/* Drag handle */
+.drag-handle{width:30px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--txt2);flex-shrink:0;touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab}
+.drag-handle:active{cursor:grabbing;color:var(--txt)}
+.sess-ex.dragging{opacity:0.3}
+.sess-ex.drag-over-top{border-top:2px solid var(--acc)}
+.sess-ex.drag-over-bot{border-bottom:2px solid var(--acc)}
 
 /* Modal / Bottom sheet */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:none;align-items:flex-end}
@@ -219,18 +242,11 @@ input::placeholder,textarea::placeholder{color:var(--txt2)}
 <div class="overlay" id="overlay-picker">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-header">
-      <span class="sheet-title" id="picker-title">Adicionar Exercício</span>
-      <button class="sheet-close" onclick="closeOverlay('overlay-picker')">×</button>
+    <div class="sheet-header" id="picker-header" style="padding:12px 16px 10px"></div>
+    <div class="sheet-body" id="picker-body"></div>
+    <div id="picker-footer" style="display:none;padding:12px 16px;border-top:1px solid var(--brd)">
+      <button class="btn btn-primary btn-full" id="picker-confirm-btn" onclick="confirmPickerSelection()">Adicionar</button>
     </div>
-    <div style="padding:0 16px 8px">
-      <div class="input-wrap">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input id="ex-search" type="text" placeholder="Buscar exercício..." oninput="filterExercises()" autocomplete="off">
-      </div>
-    </div>
-    <div class="chips" id="group-chips"></div>
-    <div class="sheet-body" id="ex-list"></div>
   </div>
 </div>
 
@@ -447,8 +463,10 @@ let sessions = [];
 let templates = [];   // fichas salvas
 let timerInterval = null;
 let currentView = 'home';
-let pickerFilter = 'Todos';
 let pickerMode = 'session'; // 'session' | 'ficha'
+let pickerView = 'groups'; // 'groups' | 'exercises'
+let pickerCurrentGroup = '';
+let pickerSelected = {}; // { exerciseName: group }
 let fichaDraft = [];         // exercícios sendo adicionados à nova ficha
 let currentMD = '';
 let currentMDName = '';
@@ -621,6 +639,7 @@ function renderExCard(ex,i){
   const done=(ex.sets||[]).filter(s=>s.done).length;
   const total=(ex.sets||[]).length;
   const c=GC[ex.group]||'#888';
+  const isAbs=(ex.group==='Abdominal');
   const rows=(ex.sets||[]).map((s,j)=>`
     <tr>
       <td class="set-num">${j+1}</td>
@@ -628,11 +647,16 @@ function renderExCard(ex,i){
         value="${s.reps||''}" onchange="updateSet(${i},${j},'reps',this.value)" inputmode="numeric"></td>
       <td><input class="set-input" type="number" min="0" max="9999" step="0.5" placeholder="kg"
         value="${s.weight||''}" onchange="updateSet(${i},${j},'weight',this.value)" inputmode="decimal"></td>
+      ${isAbs?`<td><input class="set-input-time" type="number" min="0" max="9999" placeholder="s"
+        value="${s.time||''}" onchange="updateSet(${i},${j},'time',this.value)" inputmode="numeric"></td>`:''}
       <td><button class="set-done ${s.done?'checked':''}" onclick="toggleSet(${i},${j})">✓</button></td>
       <td><button class="set-del" onclick="delSet(${i},${j})">✕</button></td>
     </tr>`).join('');
   return `<div class="sess-ex" id="excard-${i}">
     <div class="sess-ex-header" onclick="toggleExCard(${i})">
+      <div class="drag-handle" ontouchstart="startExDrag(event,${i})" onmousedown="startExDrag(event,${i})" onclick="event.stopPropagation()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+      </div>
       <div style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0"></div>
       <div style="flex:1">
         <div class="sess-ex-name">${ex.name}</div>
@@ -642,7 +666,7 @@ function renderExCard(ex,i){
     </div>
     <div class="sess-ex-body open" id="exbody-${i}">
       <table class="sets-table">
-        <thead><tr><th>#</th><th>Reps</th><th>Carga (kg)</th><th>✓</th><th></th></tr></thead>
+        <thead><tr><th>#</th><th>Reps</th><th>Carga (kg)</th>${isAbs?'<th style="color:var(--blue)">Tempo (s)</th>':''}<th>✓</th><th></th></tr></thead>
         <tbody id="sets-${i}">${rows}</tbody>
       </table>
       <button class="btn btn-secondary btn-sm btn-full" onclick="addSet(${i})">+ Série</button>
@@ -652,6 +676,75 @@ function renderExCard(ex,i){
 function toggleExCard(i){
   const b=document.getElementById(`exbody-${i}`);
   if(b) b.classList.toggle('open');
+}
+
+// ─── DRAG TO REORDER ──────────────────────────────────────────────────────────
+var _dragIdx=-1, _dragOrigY=0, _dragClone=null, _dragSrcEl=null;
+
+function startExDrag(e,i){
+  e.preventDefault(); e.stopPropagation();
+  _dragIdx=i;
+  _dragSrcEl=document.getElementById('excard-'+i);
+  var rect=_dragSrcEl.getBoundingClientRect();
+  // suporte a touch e mouse
+  var clientY=e.touches ? e.touches[0].clientY : e.clientY;
+  _dragOrigY=clientY-rect.top;
+  _dragClone=_dragSrcEl.cloneNode(true);
+  _dragClone.style.cssText='position:fixed;left:'+rect.left+'px;top:'+rect.top+'px;width:'+rect.width+'px;z-index:500;opacity:.88;pointer-events:none;box-shadow:0 10px 36px rgba(0,0,0,.6);transition:none;border-radius:14px';
+  document.body.appendChild(_dragClone);
+  _dragSrcEl.classList.add('dragging');
+  if(e.touches){
+    document.addEventListener('touchmove',_onExDragMove,{passive:false});
+    document.addEventListener('touchend',_onExDragEnd,{once:true});
+  } else {
+    document.addEventListener('mousemove',_onExDragMove);
+    document.addEventListener('mouseup',_onExDragEnd,{once:true});
+  }
+}
+
+function _onExDragMove(e){
+  if(_dragIdx<0||!_dragClone) return;
+  if(e.cancelable) e.preventDefault();
+  var clientY=e.touches ? e.touches[0].clientY : e.clientY;
+  _dragClone.style.top=(clientY-_dragOrigY)+'px';
+  var cards=document.querySelectorAll('#ex-cards .sess-ex');
+  cards.forEach(function(card,k){
+    card.classList.remove('drag-over-top','drag-over-bot');
+    if(k===_dragIdx) return;
+    var r=card.getBoundingClientRect();
+    var mid=r.top+r.height/2;
+    if(clientY<mid && clientY>r.top-6) card.classList.add('drag-over-top');
+    else if(clientY>=mid && clientY<r.bottom+6) card.classList.add('drag-over-bot');
+  });
+}
+
+function _onExDragEnd(e){
+  document.removeEventListener('touchmove',_onExDragMove);
+  document.removeEventListener('mousemove',_onExDragMove);
+  if(_dragClone){_dragClone.remove();_dragClone=null;}
+  if(_dragSrcEl){_dragSrcEl.classList.remove('dragging');_dragSrcEl=null;}
+  document.querySelectorAll('#ex-cards .sess-ex').forEach(function(c){c.classList.remove('drag-over-top','drag-over-bot');});
+  if(_dragIdx<0) return;
+  var clientY=e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+  var src=_dragIdx;
+  var newPos=_getDropPos(clientY,src);
+  _dragIdx=-1;
+  if(newPos!==src){
+    var ex=activeSession.exercises.splice(src,1)[0];
+    activeSession.exercises.splice(newPos,0,ex);
+    saveData(); showView('active');
+  }
+}
+
+function _getDropPos(clientY,fromIdx){
+  var cards=document.querySelectorAll('#ex-cards .sess-ex');
+  var pos=0;
+  for(var k=0;k<cards.length;k++){
+    if(k===fromIdx) continue;
+    var r=cards[k].getBoundingClientRect();
+    if(clientY>r.top+r.height/2) pos++;
+  }
+  return pos;
 }
 
 // ─── FICHAS VIEW ──────────────────────────────────────────────────────────────
@@ -807,38 +900,111 @@ function startFromFicha(i){
 }
 
 // ─── PICKER ───────────────────────────────────────────────────────────────────
+// ─── PICKER (navegação em 2 níveis + multi-seleção) ───────────────────────────
 function openPicker(mode){
   pickerMode=mode||'session';
-  pickerFilter='Todos';
-  document.getElementById('ex-search').value='';
-  document.getElementById('picker-title').textContent=mode==='ficha'?'Adicionar à Ficha':'Adicionar Exercício';
-  renderGroupChips();filterExercises();
+  pickerView='groups';
+  pickerSelected={};
+  renderPicker();
   openOverlay('overlay-picker');
 }
-function renderGroupChips(){
-  document.getElementById('group-chips').innerHTML=
-    ['Todos',...GROUPS].map(g=>`<button class="chip ${g===pickerFilter?'active':''}" onclick="setPickerFilter('${esc(g)}')">${g}</button>`).join('');
+function renderPicker(){
+  pickerView==='groups' ? renderPickerGroups() : renderPickerExercises();
+  renderPickerFooter();
 }
-function setPickerFilter(g){pickerFilter=g;renderGroupChips();filterExercises();}
-function filterExercises(){
-  const q=document.getElementById('ex-search').value.toLowerCase();
-  let html='';
-  GROUPS.forEach(group=>{
-    if(pickerFilter!=='Todos'&&pickerFilter!==group) return;
-    const exs=DB[group].filter(n=>!q||n.toLowerCase().includes(q));
-    if(!exs.length) return;
-    if(pickerFilter==='Todos') html+=`<div style="padding:8px 16px 4px;font-size:11px;font-weight:700;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px">${group}</div>`;
-    html+=`<div style="background:var(--surf2);margin:0 0 2px">`;
-    exs.forEach(name=>{
-      const c=GC[group];
-      html+=`<div class="ex-item" onclick="${pickerMode==='ficha'?`addToFichaDraft('${esc(name)}','${esc(group)}')`:`addExercise('${esc(name)}','${esc(group)}')`}">
-        <div style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></div>
-        <div><div class="ex-name">${name}</div><div class="ex-group">${group}</div></div>
+function renderPickerGroups(){
+  const count=Object.keys(pickerSelected).length;
+  document.getElementById('picker-header').innerHTML=`
+    <span style="font-size:17px;font-weight:700">${pickerMode==='ficha'?'Adicionar à Ficha':'Escolha o Músculo'}</span>
+    <button class="sheet-close" onclick="closeOverlay('overlay-picker')">×</button>`;
+  document.getElementById('picker-body').innerHTML=`
+    ${count>0?`<div class="picker-sel-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+      ${count} exercício${count>1?'s':''} selecionado${count>1?'s':''}
+    </div>`:''}
+    <div class="group-grid">
+      ${GROUPS.map(g=>{
+        const sel=Object.values(pickerSelected).filter(v=>v===g).length;
+        return `<div class="group-card" onclick="openPickerGroup('${esc(g)}')">
+          <div style="width:12px;height:12px;border-radius:50%;background:${GC[g]||'#888'};flex-shrink:0"></div>
+          <div class="group-card-info">
+            <div class="group-card-name">${g}</div>
+            <div class="group-card-count">${sel>0?`<span style="color:var(--acc)">${sel} sel. • </span>`:''}${DB[g].length} ex.</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="color:var(--txt2);flex-shrink:0"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function openPickerGroup(group){
+  pickerCurrentGroup=group;
+  pickerView='exercises';
+  renderPicker();
+  document.getElementById('picker-body').scrollTop=0;
+}
+function renderPickerExercises(){
+  const g=pickerCurrentGroup;
+  const c=GC[g]||'#888';
+  document.getElementById('picker-header').innerHTML=`
+    <button onclick="backToPickerGroups()" style="background:none;color:var(--txt);display:flex;align-items:center;gap:6px;font-size:15px;font-weight:700;padding:0;flex:1">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      <div style="width:10px;height:10px;border-radius:50%;background:${c}"></div>
+      ${g}
+    </button>
+    <button class="sheet-close" onclick="closeOverlay('overlay-picker')">×</button>`;
+  const count=Object.keys(pickerSelected).length;
+  document.getElementById('picker-body').innerHTML=`
+    ${count>0?`<div class="picker-sel-bar">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/></svg>
+      ${count} selecionado${count>1?'s':''}
+      <button onclick="backToPickerGroups()" style="background:none;color:var(--acc);font-size:12px;font-weight:600;margin-left:auto;padding:0">↩ outros músculos</button>
+    </div>`:''}
+    ${DB[g].map(name=>{
+      const checked=pickerSelected[name]!==undefined;
+      return `<div class="ex-check-item" onclick="togglePickerEx('${esc(name)}','${esc(g)}')">
+        <div class="ex-checkbox ${checked?'checked':''}">${checked?'✓':''}</div>
+        <div style="flex:1"><div class="ex-name">${name}</div></div>
       </div>`;
+    }).join('')}`;
+}
+function backToPickerGroups(){
+  pickerView='groups';
+  renderPicker();
+  document.getElementById('picker-body').scrollTop=0;
+}
+function togglePickerEx(name,group){
+  if(pickerSelected[name]!==undefined) delete pickerSelected[name];
+  else pickerSelected[name]=group;
+  renderPickerExercises();
+  renderPickerFooter();
+}
+function renderPickerFooter(){
+  const count=Object.keys(pickerSelected).length;
+  const footer=document.getElementById('picker-footer');
+  if(count>0){
+    footer.style.display='block';
+    document.getElementById('picker-confirm-btn').textContent=
+      `Adicionar ${count} exercício${count>1?'s':''}`;
+  } else {
+    footer.style.display='none';
+  }
+}
+function confirmPickerSelection(){
+  if(pickerMode==='ficha'){
+    Object.entries(pickerSelected).forEach(([name,group])=>{
+      if(!fichaDraft.find(e=>e.name===name)) fichaDraft.push({name,group});
     });
-    html+=`</div>`;
-  });
-  document.getElementById('ex-list').innerHTML=html||`<div style="padding:32px;text-align:center;color:var(--txt2)">Nenhum exercício encontrado</div>`;
+    closeOverlay('overlay-picker');
+    renderFichaDraft();
+  } else {
+    Object.entries(pickerSelected).forEach(([name,group])=>{
+      if(activeSession&&!activeSession.exercises.find(e=>e.name===name))
+        activeSession.exercises.push({name,group,sets:[{reps:'',weight:'',done:false}]});
+    });
+    saveData();
+    closeOverlay('overlay-picker');
+    showView('active');
+  }
 }
 function addExercise(name,group){
   if(!activeSession) return;
@@ -863,6 +1029,7 @@ function addSet(i){
   if(tbody){
     const j=activeSession.exercises[i].sets.length-1;
     const s=activeSession.exercises[i].sets[j];
+    const isAbs=(activeSession.exercises[i].group==='Abdominal');
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="set-num">${j+1}</td>
@@ -870,6 +1037,8 @@ function addSet(i){
         value="${s.reps||''}" onchange="updateSet(${i},${j},'reps',this.value)" inputmode="numeric"></td>
       <td><input class="set-input" type="number" min="0" max="9999" step="0.5" placeholder="kg"
         value="${s.weight||''}" onchange="updateSet(${i},${j},'weight',this.value)" inputmode="decimal"></td>
+      ${isAbs?`<td><input class="set-input-time" type="number" min="0" max="9999" placeholder="s"
+        value="" onchange="updateSet(${i},${j},'time',this.value)" inputmode="numeric"></td>`:''}
       <td><button class="set-done" onclick="toggleSet(${i},${j})">✓</button></td>
       <td><button class="set-del" onclick="delSet(${i},${j})">✕</button></td>`;
     tbody.appendChild(tr);
@@ -878,7 +1047,8 @@ function addSet(i){
 }
 function delSet(i,j){activeSession.exercises[i].sets.splice(j,1);saveData();showView('active');}
 function updateSet(i,j,field,val){
-  activeSession.exercises[i].sets[j][field]=field==='reps'?parseInt(val)||'':parseFloat(val)||'';
+  if(field==='reps'||field==='time') activeSession.exercises[i].sets[j][field]=parseInt(val)||'';
+  else activeSession.exercises[i].sets[j][field]=parseFloat(val)||'';
   saveData();updateExMeta(i);
 }
 function toggleSet(i,j){
@@ -943,8 +1113,6 @@ function openNewFicha(){
 function openPickerForFicha(){openPicker('ficha');}
 function addToFichaDraft(name,group){
   if(!fichaDraft.find(e=>e.name===name)) fichaDraft.push({name,group});
-  closeOverlay('overlay-picker');
-  renderFichaDraft();
 }
 function renderFichaDraft(){
   const el=document.getElementById('ficha-ex-draft');
@@ -1007,10 +1175,18 @@ function buildMD(s){
     const exVol=doneSets.reduce((a,s)=>a+(s.reps||0)*(s.weight||0),0);
     md+=`### ${n+1}. ${ex.name} · ${ex.group}\n\n`;
     if(doneSets.length){
-      md+=`| Série | Repetições | Carga (kg) | Volume (kg) |\n|---|---|---|---|\n`;
-      doneSets.forEach((s,i)=>{
-        md+=`| ${i+1} | ${s.reps||'—'} | ${s.weight||'—'} | ${((s.reps||0)*(s.weight||0)).toLocaleString('pt-BR')} |\n`;
-      });
+      const hasTime=(ex.group==='Abdominal');
+      if(hasTime){
+        md+=`| Série | Repetições | Carga (kg) | Tempo (s) | Volume (kg) |\n|---|---|---|---|---|\n`;
+        doneSets.forEach((s,i)=>{
+          md+=`| ${i+1} | ${s.reps||'—'} | ${s.weight||'—'} | ${s.time||'—'} | ${((s.reps||0)*(s.weight||0)).toLocaleString('pt-BR')} |\n`;
+        });
+      } else {
+        md+=`| Série | Repetições | Carga (kg) | Volume (kg) |\n|---|---|---|---|\n`;
+        doneSets.forEach((s,i)=>{
+          md+=`| ${i+1} | ${s.reps||'—'} | ${s.weight||'—'} | ${((s.reps||0)*(s.weight||0)).toLocaleString('pt-BR')} |\n`;
+        });
+      }
       md+=`\n**Volume do exercício: ${exVol.toLocaleString('pt-BR')} kg**\n\n`;
     } else {
       md+=`*Nenhuma série marcada como concluída.*\n\n`;
